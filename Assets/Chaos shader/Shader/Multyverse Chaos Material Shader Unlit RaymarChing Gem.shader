@@ -1,4 +1,4 @@
-Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Raymarching-Material Shader/Mandelbulb"
+Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Raymarching-Material Shader/Gem"
 {
     Properties
     {
@@ -6,10 +6,6 @@ Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Raymarch
         _MainColor("Color", Color) = (1,1,1,1)
         _WVector("Wpos", int) = 0
         _Radius("Wscale", Range(0,.49)) = .49
-         _Iterations ("Iterations", Int) = 10
-        _Power ("Power", Int) = 8
-        _EscapeRadius ("Escape Radius", Float) = 2.0
-        _Scale ("Scale", Float) = 0.4
         MAX_STEPS ("MAX_STEPS", int) = 100
         MAX_DIST ("MAX_DIST", int) = 100
         SURF_DIST  ("SURF_DIST", float) = 0.001
@@ -31,10 +27,7 @@ ZWrite off
             int  MAX_DIST ;
             float SURF_DIST ;
             #include "UnityCG.cginc"
-                int _Iterations;
-        int _Power;
-        float _EscapeRadius;
-        float _Scale;
+            
 uniform float4 _MainTex_TexelSize;
 uniform float4x4 _CameraInvViewMatrix;
             struct appdata
@@ -66,41 +59,17 @@ uniform float4x4 _CameraInvViewMatrix;
                 o.hitPos =  v.vertex;
                 
                 return o;
-            }float Sphere(float3 p, float3 c, float r)
-{
-    return length(p - c) - r;
-}
-          
-            float GetDist(float3 pos) {
-                if (length(pos) > 1) {
-                return Sphere(pos, 0, 0.5);
             }
-            pos = pos/_Scale;
-            float3 z = pos;
-            float dr = 1.0;
-            float r = 0.0;
-            for (int i = 0; i < _Iterations; ++i) {
-                // Convert to polar coordinates
-                r = length(z);
-                if (r > _EscapeRadius)
-                    break;
-                float theta = acos(z.y/r);
-		        float phi = atan2(z.z,z.x);
-                dr =  pow(r, _Power - 1.0) * _Power * dr + 1.0;
-                
-                // Scale and rotate the point
-                float zr = pow(r, _Power);
-                theta = theta * _Power;
-                phi = phi * _Power;
-                
-                // Convert back to cartesian coordinates
-                z = zr * float3(sin(theta)*cos(phi), cos(theta), sin(phi)*sin(theta));
-                z += pos;
-            }
-           
-            float d = _Scale * 0.5 * log(r) * r / dr;
-            
-                d += length(_WVector/100);
+            float GetDist(float3 p, float2 c, float ra)
+            {
+                p.y += 0.25;
+                float d = length(p)- _Radius;
+                d += length(_WVector);
+                  // c is the sin/cos of the angle
+                float2 q = float2( length(p.xz), p.y );
+                float l = length(q) - ra;
+                float m = length(q - c*clamp(dot(q,c),0.0,ra) );
+                return max(l,m*sign(c.y*q.x-c.x*q.y));
                 return d;
             }
            
@@ -113,7 +82,7 @@ uniform float4x4 _CameraInvViewMatrix;
                             
                     float3 p = (ro + dO * rd);
                 
-                    ds = GetDist(p);
+                    ds = GetDist(p, float2(3,4)/5.0, 0.7);
                     dO += ds;
                     if (ds<SURF_DIST || dO> MAX_DIST) break;
                     
@@ -122,10 +91,10 @@ uniform float4x4 _CameraInvViewMatrix;
             }
             float3 GetNormal(float3 p) {
                 float2 e = float2(1e-2, 0);
-                float3 n = GetDist(p) - float3(
-                    GetDist(p - e.xyy),
-                    GetDist(p - e.yxy),
-                    GetDist(p - e.yyx)
+                float3 n = GetDist(p, float2(3,4)/5.0, 0.7) - float3(
+                    GetDist(p - e.xyy, float2(3,4)/5.0, 0.7),
+                    GetDist(p - e.yxy, float2(3,4)/5.0, 0.7),
+                    GetDist(p - e.yyx, float2(3,4)/5.0, 0.7)
 
                     );
                 return normalize(n);
@@ -162,7 +131,7 @@ uniform float4x4 _CameraInvViewMatrix;
                        {
                             col = 0.1;
                        }
-                    col = lerp(col, tex, 0.6);
+                    col = lerp(col+fixed4(0,0,0,0), tex, 0.6);
                 }
                 else discard;
                 return col*_MainColor;

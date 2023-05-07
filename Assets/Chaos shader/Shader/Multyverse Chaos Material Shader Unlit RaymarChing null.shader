@@ -112,15 +112,15 @@ ZWrite off
                 
                 if (tex.a != 0) {
 
-                    if(dot(col, _WorldSpaceLightPos0.xyz) > 0.1)
+                    if(dot(col, _WorldSpaceLightPos0.xyz)*2 > 0.1)
                        {
-                            col = dot(col, _WorldSpaceLightPos0.xyz);
+                            col = dot(col, _WorldSpaceLightPos0.xyz)*2;
                        }
                        else
                        {
                             col = 0.1;
                        }
-                    col = lerp(col, tex, 0.5);
+                    col = lerp(col, tex, 0.6);
                 }
                 else discard;
                 if(p.y > -.6)

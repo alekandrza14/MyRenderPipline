@@ -117,15 +117,15 @@ uniform float4x4 _CameraInvViewMatrix;
 
                 if (tex.a != 0) {
 
-                   if(dot(col, _WorldSpaceLightPos0.xyz) > 0.1)
+                   if(dot(col, _WorldSpaceLightPos0.xyz)*2 > 0.1)
                        {
-                            col = dot(col, _WorldSpaceLightPos0.xyz);
+                            col = dot(col, _WorldSpaceLightPos0.xyz)*2;
                        }
                        else
                        {
                             col = 0.1;
                        }
-                    col = lerp(col+fixed4(0,0,0,0), tex, 0.5);
+                    col = lerp(col+fixed4(0,0,0,0), tex, 0.6);
                 }
                 else discard;
                 return col*_MainColor;

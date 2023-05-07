@@ -1,4 +1,4 @@
-Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material Shader/Standart"
+Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material Shader/Particles"
 {
     Properties
     {
@@ -12,12 +12,11 @@ Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material
         _Ambient("Ambient", Range(-0,1.5)) = 1.3
         _Metalic("Shine", Range(-0,1)) = 0
 
-        [Header(Fractal Position)]
-        _posX("X",Range(-15,15)) = 10.0
-        _posY("Y",Range(-15,15)) = 10.0
-        _sX("scaleX",Range(-0,3)) = 1.0
-        _sY("scaleY",Range(-0,3)) = 1.0
-        _mc("0n of",int) = 0
+        [Header(Other Settings)]
+        _UltraViolet ("Shine Indensity", Range(0,10)) = 0
+        _ThoTex("Shine", 2D) = "white" {}
+        _ThoColor("Shine Color", Color) = (1,1,1,1)
+        _cet("cet", Range(-2,2)) = 1
     }
 
         SubShader
@@ -36,12 +35,19 @@ Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material
                  #include "UnityCG.cginc" 
                  #include "UnityLightingCommon.cginc" 
                  fixed4 _MainColor;
+                 fixed4 _ThoColor;   
+                 float _cet;
+                         float hash = 0.1; 
+                         float _UltraViolet;
             struct appdata
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normal : NORMAL;
-            };
+            };     float random(float2 uv)
+        {
+            return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
+        }
             float Hash(float2 p)
             {
                 float d = dot(p, float2(12.9898f, 78.233f));
@@ -72,69 +78,12 @@ Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material
             float _MainNoisePower;
             float _MainNoiseScale;
             sampler2D _MainTex;
+            sampler2D _ThoTex;
             float4 _MainTex_ST;
             fixed4 _LightColor;
             fixed4 _BrightColor;
-            float random(float2 uv)
-            {
-                return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
-            }
-            fixed4 Fract(float2 uv)
-            {
-
-
-                fixed4 col = fixed4(1, 1, 1, 1);
-            float4 n = float4(0, 0, 0, 0);
-
-            float dx = (uv.x - _posX) / 0.4 * _sX;
-                      float dy = (uv.y - _posY) / 0.4 * _sY;
-                      float a = dx;
-                      float b = dy;
-                      float indencity;
-                        for (float z = 0; z < 60; z++) {
-
-
-
-                              float d = (a * a) - (b * b) + dx;
-                              b = 2 * (a * b) + dy;
-                              a = d;
-                              bool H = d < 2;
-
-                              if (d <= -1.5) {
-
-
-                                  if (_mc == 1) {
-                                      discard;
-                                  }
-
-                                  return fixed4(0, 0, 0, 0);
-                              }if (true) {
-
-
-
-
-                              }
-                                if (H) {
-
-
-                                  n = d / d / 2 * d / d ;
-
-
-
-                                }
-
-
-                        }
-
-
-                        if (_mc == 1) {
-                            col = float4(0, 0, 0, 0);
-                        }
-                // apply fog
-
-
-                return col;
-            }
+          
+           
             v2f vert(appdata v)
             {
                 v2f o;
@@ -176,8 +125,18 @@ Shader "Unauticna Multiverse Customs/Low UnLit Shaders/Multyverse Chaos Material
                }
                fixed4 c = (col * _MainColor.rgba ) + (_LightColor);
                if ((_BrightColor.r + _BrightColor.b + _BrightColor.g) != 0) { if ((_LightColor.r + _LightColor.b + _LightColor.g) > 0.5)  c *= _BrightColor * 10; }
-             c += Fract(i.uv);
-               return c;
+             
+             hash+=((random(mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1) * _Time.y))/2)+1.25);
+            hash += _cet;
+            // Albedo comes from a texture tinted by color
+            fixed4 c4 = float4(0,0,0,0);
+            float uf = tex2D (_ThoTex, i.uv);
+            hash -= c4.r/2.5;
+            hash -= c4.g *2;
+            hash -= c4.b * 1.2;
+            c4.rgb += (float3(uf  *(1 + hash), uf  *(1 + hash), (uf  *(1 + hash)) * 0.5)/2.14)*_ThoColor;
+            c4.rgb += (float3(uf * _UltraViolet* (1 + hash),uf * _UltraViolet* (1 + hash), (uf * _UltraViolet * (1 + hash))*0.5) / 3.14)*_ThoColor;
+               return c+c4;
             }
         ENDCG
     }
